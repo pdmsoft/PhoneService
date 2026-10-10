@@ -27,7 +27,7 @@ object CallLogRepository {
     private const val fileName = "calls.json"
     private const val maxStored = 20_000
     private const val overlapMillis = 6 * 60 * 60 * 1000L
-    private const val observerDelayMillis = 1_500L
+    private const val observerDelayMillis = 3_000L
     private val lock = ReentrantLock()
     private val watchLock = Any()
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
@@ -37,14 +37,8 @@ object CallLogRepository {
     private val syncHandler by lazy(LazyThreadSafetyMode.NONE) {
         Handler(syncThread.looper)
     }
-    private val syncTask = Runnable {
-        val context = appContext ?: return@Runnable
-        try {
-            sync(context)
-        } catch (error: Exception) {
-            Log.w(tag, "observer sync failed: ${error.javaClass.simpleName}")
-        }
-    }
+    private val followUpTask = Runnable { snapshotCallLog() }
+    private var immediateQueued = false
 
     @Volatile
     private var appContext: Context? = null
@@ -95,8 +89,15 @@ object CallLogRepository {
             appContext = applicationContext
             val contentObserver = object : android.database.ContentObserver(syncHandler) {
                 override fun onChange(selfChange: Boolean) {
-                    syncHandler.removeCallbacks(syncTask)
-                    syncHandler.postDelayed(syncTask, observerDelayMillis)
+                    if (!immediateQueued) {
+                        immediateQueued = true
+                        syncHandler.post {
+                            immediateQueued = false
+                            snapshotCallLog()
+                        }
+                    }
+                    syncHandler.removeCallbacks(followUpTask)
+                    syncHandler.postDelayed(followUpTask, observerDelayMillis)
                 }
             }
             observer = contentObserver
@@ -132,6 +133,15 @@ object CallLogRepository {
                 }
             }
         } ?: throw IOException("export stream unavailable")
+    }
+
+    private fun snapshotCallLog() {
+        val context = appContext ?: return
+        try {
+            sync(context)
+        } catch (error: Exception) {
+            Log.w(tag, "observer sync failed: ${error.javaClass.simpleName}")
+        }
     }
 
     private fun queryRecent(context: Context, savedAtMillis: Long): List<CallEntry> {

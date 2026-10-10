@@ -7,9 +7,9 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.phoneservice.call.CallArchiveService
 import com.phoneservice.call.CallEntry
 import com.phoneservice.call.CallLogRepository
-import com.phoneservice.call.CallSyncWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +45,7 @@ class CallLogViewModel(app: Application) : AndroidViewModel(app) {
     val notice: StateFlow<Notice?> = _notice.asStateFlow()
 
     private val syncDepth = AtomicInteger(0)
-    private val onArchiveChanged = {
+    private val onArchiveChanged: () -> Unit = {
         viewModelScope.launch(Dispatchers.IO) {
             publish(CallLogRepository.load(getApplication()))
         }
@@ -73,13 +73,16 @@ class CallLogViewModel(app: Application) : AndroidViewModel(app) {
                 ignoringBattery = isIgnoringBattery(app),
             )
         }
+        if (permitted) {
+            CallArchiveService.start(app, syncNow = false)
+        } else {
+            CallArchiveService.stop(app)
+        }
         viewModelScope.launch(Dispatchers.IO) {
             if (!permitted) {
                 publish(CallLogRepository.load(app))
                 return@launch
             }
-            CallSyncWorker.ensureScheduled(app, syncNow = false)
-            CallLogRepository.watch(app)
             syncArchive()
         }
     }
@@ -87,9 +90,8 @@ class CallLogViewModel(app: Application) : AndroidViewModel(app) {
     fun onPermissionGranted() {
         val app = getApplication<Application>()
         _state.update { it.copy(permitted = true, needsSettings = false) }
+        CallArchiveService.start(app, syncNow = true)
         viewModelScope.launch(Dispatchers.IO) {
-            CallSyncWorker.ensureScheduled(app, syncNow = true)
-            CallLogRepository.watch(app)
             syncArchive()
         }
     }
@@ -97,8 +99,8 @@ class CallLogViewModel(app: Application) : AndroidViewModel(app) {
     fun refresh() {
         val app = getApplication<Application>()
         if (!CallLogRepository.hasPermission(app)) return
+        CallArchiveService.start(app, syncNow = false)
         viewModelScope.launch(Dispatchers.IO) {
-            CallLogRepository.watch(app)
             syncArchive()
         }
     }

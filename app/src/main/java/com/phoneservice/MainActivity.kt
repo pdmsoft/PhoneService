@@ -54,11 +54,25 @@ class MainActivity : ComponentActivity() {
     private val viewModel: CallLogViewModel by viewModels()
     private val prefs by lazy { getSharedPreferences(prefsName, MODE_PRIVATE) }
 
+    private val notificationLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) {
+        viewModel.onPermissionGranted()
+    }
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         prefs.edit().putBoolean(askedKey, true).apply()
-        if (granted) viewModel.onPermissionGranted()
+        if (!granted) return@registerForActivityResult
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.onPermissionGranted()
+        }
     }
 
     private val exportLauncher = registerForActivityResult(

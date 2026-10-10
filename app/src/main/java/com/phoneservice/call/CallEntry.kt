@@ -56,11 +56,20 @@ fun normalizedNumber(raw: String): String {
 
 fun mergeCalls(fresh: List<CallEntry>, stored: List<CallEntry>, limit: Int): List<CallEntry> {
     val map = LinkedHashMap<String, CallEntry>()
-    for (entry in fresh) {
-        if (entry.timeMillis > 0L) map.putIfAbsent(entry.archiveKey, entry)
-    }
     for (entry in stored) {
-        if (entry.timeMillis > 0L) map.putIfAbsent(entry.archiveKey, entry)
+        if (entry.timeMillis > 0L) map[entry.archiveKey] = entry
+    }
+    for (entry in fresh) {
+        if (entry.timeMillis <= 0L) continue
+        val kept = map[entry.archiveKey]
+        map[entry.archiveKey] = if (kept == null) entry else kept.withNewerDetails(entry)
     }
     return map.values.sortedByDescending { it.timeMillis }.take(limit)
 }
+
+private fun CallEntry.withNewerDetails(newer: CallEntry): CallEntry = copy(
+    number = newer.number.ifBlank { number },
+    name = newer.name.ifBlank { name },
+    durationSec = maxOf(durationSec, newer.durationSec),
+    id = if (newer.id != 0L) newer.id else id,
+)
