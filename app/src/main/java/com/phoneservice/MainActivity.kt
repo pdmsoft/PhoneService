@@ -40,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.phoneservice.call.CallEntry
@@ -274,12 +275,13 @@ private fun CallRow(entry: CallEntry) {
 private fun archiveStatus(state: CallLogUiState): String {
     val count = state.calls.size
     return when {
-        state.savedAtMillis > 0L -> stringResource(
-            R.string.last_sync,
+        state.savedAtMillis > 0L -> pluralStringResource(
+            R.plurals.last_sync,
+            count,
             formatTime(state.savedAtMillis),
             count,
         )
-        count > 0 -> stringResource(R.string.stored_count, count)
+        count > 0 -> pluralStringResource(R.plurals.stored_count, count, count)
         else -> stringResource(R.string.never_synced)
     }
 }

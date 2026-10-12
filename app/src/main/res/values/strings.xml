@@ -1,27 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PhoneService</string>
-    <string name="status_ready">통화가 끝나면 번호, 시각, 유형, 통화 시간을 이 휴대폰에 보관합니다. 휴대폰의 통화 기록을 지워도, 한 번 보관된 기록은 여기에 남습니다. 상단 알림이 켜져 있으면 통화가 끝난 직후 저장하고, 알림이 없으면 약 %1$d시간마다 다시 확인합니다. 기록은 이 휴대폰 안에만 남습니다. 앱을 강제 종료하면 다시 열 때까지 바로 보관이 멈춥니다.</string>
-    <string name="archive_channel_name">통화 보관</string>
-    <string name="archive_channel_description">통화가 끝나면 이 휴대폰에 기록을 남깁니다.</string>
-    <string name="archive_notification_title">통화 기록 보관 중</string>
-    <string name="archive_notification_text">통화가 끝나면 이 휴대폰에 보관합니다.</string>
-    <string name="status_need_permission">통화 기록 권한을 허용하면 번호, 시각, 유형, 통화 시간을 이 휴대폰에 보관합니다. 기록은 앱 저장소에만 남고 다른 곳으로 보내지 않습니다.</string>
-    <string name="allow">통화 기록 허용</string>
-    <string name="allow_settings">설정에서 통화 기록 허용</string>
-    <string name="refresh">지금 보관</string>
-    <string name="battery">배터리 제한 해제</string>
-    <string name="battery_reason">배터리 제한을 해제하면 통화가 끝난 뒤 보관이 중간에 끊기는 일을 줄일 수 있습니다.</string>
-    <string name="battery_done">배터리 제한이 해제되어 백그라운드 보관이 덜 미뤄집니다.</string>
-    <string name="battery_unavailable">이 휴대폰에서는 배터리 제한 화면을 열 수 없습니다.</string>
-    <string name="export">파일로 내보내기</string>
-    <string name="empty">아직 보관된 통화가 없습니다.</string>
-    <string name="syncing">통화 기록을 보관하는 중입니다.</string>
-    <string name="last_sync">마지막 보관 %1$s · %2$d건</string>
-    <string name="stored_count">보관 %1$d건</string>
-    <string name="never_synced">아직 보관하지 않았습니다.</string>
-    <string name="exported">파일로 저장했습니다.</string>
-    <string name="export_failed">파일로 저장하지 못했습니다.</string>
-    <string name="sync_failed">통화 기록을 읽지 못했습니다. 권한을 다시 확인해 주세요.</string>
-    <string name="private_number">번호 비공개</string>
+    <string name="status_ready">When a call ends, this phone keeps the number, time, type, and duration. Records stay here even if you clear the phone\'s call history. With the notification on, they are saved right after a call ends. Without it, the app checks again about every %1$d hours. Records stay only on this phone. Force-stopping the app pauses immediate saving until you open it again.</string>
+    <string name="archive_channel_name">Call archive</string>
+    <string name="archive_channel_description">Keeps a record on this phone when a call ends.</string>
+    <string name="archive_notification_title">Saving call history</string>
+    <string name="archive_notification_text">Calls are saved on this phone when they end.</string>
+    <string name="status_need_permission">Allow call history access to save the number, time, type, and duration on this phone. Records stay in the app\'s storage and are not sent anywhere else.</string>
+    <string name="allow">Allow call history</string>
+    <string name="allow_settings">Allow call history in Settings</string>
+    <string name="refresh">Save now</string>
+    <string name="battery">Turn off battery restrictions</string>
+    <string name="battery_reason">Turning off battery restrictions makes it less likely that saving is interrupted after a call ends.</string>
+    <string name="battery_done">Battery restrictions are off, so background saving is less likely to be delayed.</string>
+    <string name="battery_unavailable">This phone cannot open the battery restriction screen.</string>
+    <string name="export">Export to a file</string>
+    <string name="empty">No calls saved yet.</string>
+    <string name="syncing">Saving call history.</string>
+    <plurals name="last_sync">
+        <item quantity="one">Last saved %1$s · %2$d call</item>
+        <item quantity="other">Last saved %1$s · %2$d calls</item>
+    </plurals>
+    <plurals name="stored_count">
+        <item quantity="one">%1$d call saved</item>
+        <item quantity="other">%1$d calls saved</item>
+    </plurals>
+    <string name="never_synced">Nothing saved yet.</string>
+    <string name="exported">Saved to a file.</string>
+    <string name="export_failed">Could not save to a file.</string>
+    <string name="sync_failed">Could not read call history. Check the permission and try again.</string>
+    <string name="private_number">Private number</string>
 </resources>

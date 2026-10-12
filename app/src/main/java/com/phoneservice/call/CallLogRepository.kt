@@ -116,7 +116,7 @@ object CallLogRepository {
         context.contentResolver.openOutputStream(uri)?.use { output ->
             output.writer(Charsets.UTF_8).use { writer ->
                 writer.write("\uFEFF")
-                writer.write("이름,번호,유형,시각,통화시간초,기록ID\n")
+                writer.write("Name,Number,Type,Time,DurationSeconds,RecordId\n")
                 calls.forEach { entry ->
                     val time = formatter.format(Instant.ofEpochMilli(entry.timeMillis))
                     writer.write(
@@ -227,19 +227,19 @@ object CallLogRepository {
         val backup = File(directory, "$fileName.bak")
         writeSynced(temporary, encode(archive))
         if (file.exists() && readArchive(file) == null && !file.delete()) {
-            throw IOException("손상된 보관 파일을 지우지 못했습니다.")
+            throw IOException("Could not delete the damaged archive file.")
         }
         if (file.exists()) {
             if (backup.exists() && !backup.delete()) {
-                throw IOException("이전 보관 파일을 지우지 못했습니다.")
+                throw IOException("Could not delete the previous archive file.")
             }
             if (!file.renameTo(backup)) {
-                throw IOException("보관 파일을 교체하지 못했습니다.")
+                throw IOException("Could not replace the archive file.")
             }
         }
         if (!temporary.renameTo(file)) {
             if (!file.exists() && backup.exists()) backup.renameTo(file)
-            throw IOException("보관 파일을 저장하지 못했습니다.")
+            throw IOException("Could not save the archive file.")
         }
     }
 

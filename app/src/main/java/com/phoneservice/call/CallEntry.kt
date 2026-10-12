@@ -14,14 +14,14 @@ data class CallEntry(
         get() = "$timeMillis|${normalizedNumber(number)}|$type"
 
     fun typeLabel(): String = when (type) {
-        CallLog.Calls.INCOMING_TYPE -> "수신"
-        CallLog.Calls.OUTGOING_TYPE -> "발신"
-        CallLog.Calls.MISSED_TYPE -> "부재중"
-        CallLog.Calls.VOICEMAIL_TYPE -> "음성사서함"
-        CallLog.Calls.REJECTED_TYPE -> "거절"
-        CallLog.Calls.BLOCKED_TYPE -> "차단"
-        CallLog.Calls.ANSWERED_EXTERNALLY_TYPE -> "다른 기기에서 받음"
-        else -> "기타"
+        CallLog.Calls.INCOMING_TYPE -> "Incoming"
+        CallLog.Calls.OUTGOING_TYPE -> "Outgoing"
+        CallLog.Calls.MISSED_TYPE -> "Missed"
+        CallLog.Calls.VOICEMAIL_TYPE -> "Voicemail"
+        CallLog.Calls.REJECTED_TYPE -> "Rejected"
+        CallLog.Calls.BLOCKED_TYPE -> "Blocked"
+        CallLog.Calls.ANSWERED_EXTERNALLY_TYPE -> "Answered on another device"
+        else -> "Other"
     }
 
     fun durationLabel(): String {
@@ -30,9 +30,9 @@ data class CallEntry(
         val minutes = (durationSec % 3600) / 60
         val seconds = durationSec % 60
         return listOfNotNull(
-            if (hours > 0) "${hours}시간" else null,
-            if (minutes > 0) "${minutes}분" else null,
-            if (seconds > 0 || (hours == 0 && minutes == 0)) "${seconds}초" else null,
+            if (hours > 0) "${hours}h" else null,
+            if (minutes > 0) "${minutes}m" else null,
+            if (seconds > 0 || (hours == 0 && minutes == 0)) "${seconds}s" else null,
         ).joinToString(" ")
     }
 }
