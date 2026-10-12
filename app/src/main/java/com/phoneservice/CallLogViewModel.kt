@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
 data class CallLogUiState(
@@ -102,6 +103,21 @@ class CallLogViewModel(app: Application) : AndroidViewModel(app) {
         CallArchiveService.start(app, syncNow = false)
         viewModelScope.launch(Dispatchers.IO) {
             syncArchive()
+        }
+    }
+
+    fun prepareEmail(onReady: (Uri) -> Unit) {
+        val app = getApplication<Application>()
+        viewModelScope.launch(Dispatchers.IO) {
+            val ready = runCatching { CallLogRepository.shareCsv(app) }
+            withContext(Dispatchers.Main) {
+                ready.fold(
+                    onSuccess = onReady,
+                    onFailure = {
+                        _notice.value = Notice(app.getString(R.string.email_failed))
+                    },
+                )
+            }
         }
     }
 

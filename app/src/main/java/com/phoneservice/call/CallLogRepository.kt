@@ -10,6 +10,7 @@ import android.os.HandlerThread
 import android.provider.CallLog
 import android.util.Log
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -81,6 +82,17 @@ object CallLogRepository {
 
     fun load(context: Context): CallArchive = lock.withLock { loadUnlocked(context) }
 
+    fun unwatch(context: Context) {
+        synchronized(watchLock) {
+            val contentObserver = observer ?: return
+            context.applicationContext.contentResolver.unregisterContentObserver(contentObserver)
+            observer = null
+            appContext = null
+            immediateQueued = false
+            syncHandler.removeCallbacksAndMessages(null)
+        }
+    }
+
     fun watch(context: Context) {
         if (!hasPermission(context)) return
         val applicationContext = context.applicationContext
@@ -110,29 +122,46 @@ object CallLogRepository {
     }
 
     fun exportCsv(context: Context, uri: Uri) {
+        context.contentResolver.openOutputStream(uri)?.use { output ->
+            writeCsv(context, output)
+        } ?: throw IOException("export stream unavailable")
+    }
+
+    fun shareCsv(context: Context): Uri {
+        val directory = File(context.cacheDir, "shared").apply { mkdirs() }
+        val stamp = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
+            .withZone(ZoneId.systemDefault())
+            .format(Instant.now())
+        val file = File(directory, "calls-$stamp.csv")
+        file.outputStream().use { output -> writeCsv(context, output) }
+        directory.listFiles()?.forEach { older ->
+            if (older != file) older.delete()
+        }
+        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }
+
+    private fun writeCsv(context: Context, output: java.io.OutputStream) {
         val calls = load(context).calls
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
             .withZone(ZoneId.systemDefault())
-        context.contentResolver.openOutputStream(uri)?.use { output ->
-            output.writer(Charsets.UTF_8).use { writer ->
-                writer.write("\uFEFF")
-                writer.write("Name,Number,Type,Time,DurationSeconds,RecordId\n")
-                calls.forEach { entry ->
-                    val time = formatter.format(Instant.ofEpochMilli(entry.timeMillis))
-                    writer.write(
-                        listOf(
-                            csv(entry.name),
-                            csv(entry.number, asText = true),
-                            csv(entry.typeLabel()),
-                            csv(time),
-                            entry.durationSec.toString(),
-                            entry.id.toString(),
-                        ).joinToString(","),
-                    )
-                    writer.write("\n")
-                }
+        output.writer(Charsets.UTF_8).use { writer ->
+            writer.write("\uFEFF")
+            writer.write("Name,Number,Type,Time,DurationSeconds,RecordId\n")
+            calls.forEach { entry ->
+                val time = formatter.format(Instant.ofEpochMilli(entry.timeMillis))
+                writer.write(
+                    listOf(
+                        csv(entry.name),
+                        csv(entry.number, asText = true),
+                        csv(entry.typeLabel()),
+                        csv(time),
+                        entry.durationSec.toString(),
+                        entry.id.toString(),
+                    ).joinToString(","),
+                )
+                writer.write("\n")
             }
-        } ?: throw IOException("export stream unavailable")
+        }
     }
 
     private fun snapshotCallLog() {

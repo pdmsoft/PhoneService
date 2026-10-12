@@ -2,6 +2,7 @@ package com.phoneservice
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -55,25 +56,11 @@ class MainActivity : ComponentActivity() {
     private val viewModel: CallLogViewModel by viewModels()
     private val prefs by lazy { getSharedPreferences(prefsName, MODE_PRIVATE) }
 
-    private val notificationLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) {
-        viewModel.onPermissionGranted()
-    }
-
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         prefs.edit().putBoolean(askedKey, true).apply()
-        if (!granted) return@registerForActivityResult
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-            android.content.pm.PackageManager.PERMISSION_GRANTED
-        ) {
-            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            viewModel.onPermissionGranted()
-        }
+        if (granted) viewModel.onPermissionGranted()
     }
 
     private val exportLauncher = registerForActivityResult(
@@ -96,6 +83,7 @@ class MainActivity : ComponentActivity() {
                     onRefresh = viewModel::refresh,
                     onBattery = ::requestUnrestrictedBattery,
                     onExport = ::exportArchive,
+                    onEmail = ::emailArchive,
                     onNoticeShown = viewModel::consumeNotice,
                 )
             }
@@ -153,6 +141,24 @@ class MainActivity : ComponentActivity() {
         exportLauncher.launch("calls-$stamp.csv")
     }
 
+    private fun emailArchive() {
+        viewModel.prepareEmail { uri ->
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(Intent.EXTRA_SUBJECT, getString(R.string.email_subject))
+                putExtra(Intent.EXTRA_STREAM, uri)
+                clipData = ClipData.newUri(contentResolver, "calls", uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                selector = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:"))
+            }
+            try {
+                startActivity(send)
+            } catch (_: ActivityNotFoundException) {
+                viewModel.showNotice(getString(R.string.email_unavailable))
+            }
+        }
+    }
+
     companion object {
         private const val prefsName = "phone_service_ui"
         private const val askedKey = "asked_call_log"
@@ -183,6 +189,7 @@ private fun CallLogScreen(
     onRefresh: () -> Unit,
     onBattery: () -> Unit,
     onExport: () -> Unit,
+    onEmail: () -> Unit,
     onNoticeShown: () -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -235,6 +242,9 @@ private fun CallLogScreen(
                         }
                     }
                     if (state.calls.isNotEmpty()) {
+                        Button(onClick = onEmail, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.email))
+                        }
                         Button(onClick = onExport, modifier = Modifier.fillMaxWidth()) {
                             Text(stringResource(R.string.export))
                         }
